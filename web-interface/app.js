@@ -482,7 +482,103 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("send-loan-btn").addEventListener("click", () => {
-    alert("Request sent successfully to DBS Bank Ltd.");
+    alert("Request sent successfully to [Bank Name].");
     document.getElementById("loan-modal").classList.add("hidden");
   });
+
+  // Chatbot Logic
+  const chatToggleBtn = document.getElementById('chat-toggle-btn');
+  const chatWindow = document.getElementById('chat-window');
+  const closeChatBtn = document.getElementById('close-chat-btn');
+  const chatForm = document.getElementById('chat-form');
+  const chatInput = document.getElementById('chat-input');
+  const chatMessages = document.getElementById('chat-messages');
+
+  let chatHistory = [];
+
+  function addMessage(text, isUser = false) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `flex flex-col gap-1 max-w-[85%] ${isUser ? 'items-end self-end' : 'items-start'}`;
+    
+    const bubble = document.createElement('div');
+    bubble.className = `p-3 text-sm ${isUser ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm' : 'bg-slate-800 text-slate-200 rounded-2xl rounded-tl-sm'}`;
+    bubble.textContent = text;
+    
+    msgDiv.appendChild(bubble);
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function addTypingIndicator() {
+    const msgDiv = document.createElement('div');
+    msgDiv.id = 'typing-indicator';
+    msgDiv.className = `flex flex-col items-start gap-1 max-w-[85%]`;
+    
+    const bubble = document.createElement('div');
+    bubble.className = `p-3 text-sm bg-slate-800 text-slate-200 rounded-2xl rounded-tl-sm flex items-center gap-1`;
+    bubble.innerHTML = `<span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span><span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span><span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>`;
+    
+    msgDiv.appendChild(bubble);
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function removeTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+      indicator.remove();
+    }
+  }
+
+  chatToggleBtn.addEventListener('click', () => {
+    chatWindow.classList.toggle('hidden');
+  });
+
+  closeChatBtn.addEventListener('click', () => {
+    chatWindow.classList.add('hidden');
+  });
+
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    // Add user message to UI
+    addMessage(message, true);
+    chatInput.value = '';
+    
+    // Add to history
+    chatHistory.push({ role: "user", parts: [{ text: message }] });
+
+    // Show typing
+    addTypingIndicator();
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ messages: chatHistory })
+      });
+
+      removeTypingIndicator();
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch response');
+      }
+
+      const data = await response.json();
+      const reply = data.reply || "I'm sorry, I couldn't process that request.";
+      
+      addMessage(reply, false);
+      chatHistory.push({ role: "model", parts: [{ text: reply }] });
+
+    } catch (error) {
+      removeTypingIndicator();
+      console.error('Chat error:', error);
+      addMessage('Sorry, there was an error communicating with the server.', false);
+    }
+  });
+
 });

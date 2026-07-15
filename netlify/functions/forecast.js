@@ -38,7 +38,7 @@ export const handler = async (event, context) => {
 
   try {
     const prompt = `
-You are an expert Virtual Treasurer AI. Based on the following financial forecast, write a highly professional, math-backed short-term working capital micro-loan request letter to a bank (DBS Bank Ltd).
+You are an expert Virtual Treasurer AI. Based on the following financial forecast, write a highly professional, math-backed short-term working capital micro-loan request letter to a bank ([Bank Name]).
 
 Our company name is [Company Name]. We need a $3,000.00 micro-loan to bridge a cash flow timing mismatch.
 
@@ -54,7 +54,7 @@ Financial context:
 The letter should be structured with clear headings like "Context & Financial Analysis", "Cause of the Cash Flow Gap", and "Loan Details & Repayment Strategy". Keep it objective, precise, and professional. Only return the text of the letter.
 `;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -77,8 +77,8 @@ The letter should be structured with clear headings like "Context & Financial An
       body: JSON.stringify(forecastData)
     };
   } catch (error) {
-    console.error("Gemini API Error:", error.message);
-    forecastData.loanLetter = `[Mock Generated Letter - API Error Encountered]\n\nDear DBS Bank Ltd,\n\nContext & Financial Analysis\nWe are [Company Name]. Based on our recent financial analysis (as of July 14, 2026), our business is experiencing a net positive daily operating cash flow of ~$156.65, with average daily sales of $242.45 and overhead of $85.80.\n\nCause of the Cash Flow Gap\nWe are expecting a short-term cash crunch starting July 17, 2026. This is due to the concentration of two scheduled obligations: a bi-weekly payroll of $2,500.00 and weekly supplier payments of $1,200.00. This timing mismatch will result in an estimated shortfall of $1,723.85.\n\nLoan Details & Repayment Strategy\nWe are requesting a $3,000.00 micro-loan to bridge this gap. Our consistent daily positive cash flow will allow us to repay this loan promptly once the timing mismatch resolves.\n\nThank you for your consideration.`;
+    console.warn("Gemini API Warning:", error.message);
+    forecastData.loanLetter = `[Mock Generated Letter - API Error Encountered]\n\nDear [Bank Name],\n\nContext & Financial Analysis\nWe are [Company Name]. Based on our recent financial analysis (as of July 14, 2026), our business is experiencing a net positive daily operating cash flow of ~$156.65, with average daily sales of $242.45 and overhead of $85.80.\n\nCause of the Cash Flow Gap\nWe are expecting a short-term cash crunch starting July 17, 2026. This is due to the concentration of two scheduled obligations: a bi-weekly payroll of $2,500.00 and weekly supplier payments of $1,200.00. This timing mismatch will result in an estimated shortfall of $1,723.85.\n\nLoan Details & Repayment Strategy\nWe are requesting a $3,000.00 micro-loan to bridge this gap. Our consistent daily positive cash flow will allow us to repay this loan promptly once the timing mismatch resolves.\n\nThank you for your consideration.`;
     return {
       statusCode: 200,
       headers: {

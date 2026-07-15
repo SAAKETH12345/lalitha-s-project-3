@@ -1,0 +1,6 @@
+{
+  "name": "QuantumCash AI",
+  "description": "Virtual treasurer AI dashboard that monitors cash flow and automatically drafts bank letters",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

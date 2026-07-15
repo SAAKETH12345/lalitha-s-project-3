@@ -11,6 +11,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'web-interface')));
 
 import { GoogleGenAI } from '@google/genai';
@@ -51,7 +52,7 @@ app.get('/api/forecast', async (req, res) => {
 
   try {
     const prompt = `
-You are an expert Virtual Treasurer AI. Based on the following financial forecast, write a highly professional, math-backed short-term working capital micro-loan request letter to a bank (DBS Bank Ltd).
+You are an expert Virtual Treasurer AI. Based on the following financial forecast, write a highly professional, math-backed short-term working capital micro-loan request letter to a bank ([Bank Name]).
 
 Our company name is [Company Name]. We need a $3,000.00 micro-loan to bridge a cash flow timing mismatch.
 
@@ -67,7 +68,7 @@ Financial context:
 The letter should be structured with clear headings like "Context & Financial Analysis", "Cause of the Cash Flow Gap", and "Loan Details & Repayment Strategy". Keep it objective, precise, and professional. Only return the text of the letter.
 `;
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.1-flash-lite',
       contents: prompt,
     });
     
@@ -75,12 +76,42 @@ The letter should be structured with clear headings like "Context & Financial An
     
     res.json(forecastData);
   } catch (error) {
-    console.error("Gemini API Error:", error.message);
+    console.warn("Gemini API Warning:", error.message);
     
     // Provide a fallback mock letter if the API fails (e.g. invalid key or quota exhausted)
-    forecastData.loanLetter = `[Mock Generated Letter - API Error Encountered]\n\nDear DBS Bank Ltd,\n\nContext & Financial Analysis\nWe are [Company Name]. Based on our recent financial analysis (as of July 14, 2026), our business is experiencing a net positive daily operating cash flow of ~$156.65, with average daily sales of $242.45 and overhead of $85.80.\n\nCause of the Cash Flow Gap\nWe are expecting a short-term cash crunch starting July 17, 2026. This is due to the concentration of two scheduled obligations: a bi-weekly payroll of $2,500.00 and weekly supplier payments of $1,200.00. This timing mismatch will result in an estimated shortfall of $1,723.85.\n\nLoan Details & Repayment Strategy\nWe are requesting a $3,000.00 micro-loan to bridge this gap. Our consistent daily positive cash flow will allow us to repay this loan promptly once the timing mismatch resolves.\n\nThank you for your consideration.`;
+    forecastData.loanLetter = `[Mock Generated Letter - API Error Encountered]\n\nDear [Bank Name],\n\nContext & Financial Analysis\nWe are [Company Name]. Based on our recent financial analysis (as of July 14, 2026), our business is experiencing a net positive daily operating cash flow of ~$156.65, with average daily sales of $242.45 and overhead of $85.80.\n\nCause of the Cash Flow Gap\nWe are expecting a short-term cash crunch starting July 17, 2026. This is due to the concentration of two scheduled obligations: a bi-weekly payroll of $2,500.00 and weekly supplier payments of $1,200.00. This timing mismatch will result in an estimated shortfall of $1,723.85.\n\nLoan Details & Repayment Strategy\nWe are requesting a $3,000.00 micro-loan to bridge this gap. Our consistent daily positive cash flow will allow us to repay this loan promptly once the timing mismatch resolves.\n\nThank you for your consideration.`;
     
     res.json(forecastData);
+  }
+});
+
+app.post('/api/chat', async (req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: "GEMINI_API_KEY environment variable is not set." });
+  }
+
+  try {
+    const { messages } = req.body;
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const systemPrompt = "You are the QuantumCash Virtual Assistant, a helpful AI assistant for a secure banking portal. Be concise and professional.";
+    
+    const formattedMessages = [
+      { role: "user", parts: [{ text: systemPrompt }] },
+      { role: "model", parts: [{ text: "Understood. I am the QuantumCash Virtual Assistant." }] },
+      ...messages
+    ];
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite',
+      contents: formattedMessages,
+    });
+
+    res.json({ reply: response.text });
+  } catch (error) {
+    console.warn("Chat API Warning:", error.message);
+    res.status(500).json({ error: "Failed to generate response. " + error.message });
   }
 });
 
